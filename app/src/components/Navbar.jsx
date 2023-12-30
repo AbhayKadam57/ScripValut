@@ -224,10 +224,10 @@ const Navbar = () => {
   const { name, userid } = useSelector((state) => state.users);
 
   const FirstName = name.split(" ")[0][0];
-  const LastName = name.split(" ")[1][0];
+  // const LastName = name.split(" ")[1][0] ? name.split(" ")[1][0] : "";
 
   console.log(FirstName);
-  console.log(LastName);
+  // console.log(LastName);
 
   const [searchInput, setSearchInput] = useState("");
 
@@ -322,7 +322,7 @@ const Navbar = () => {
         <Right>
           <Profile>
             <ProfileLogo>
-              <h1>{FirstName + LastName}</h1>
+              <h1>{FirstName}</h1>
             </ProfileLogo>
             {!showProfile ? (
               <FontAwesomeIcon

@@ -247,24 +247,24 @@ const Investment = () => {
     };
   }, [pathname]);
 
-  if (MyinvestMent === 0 || MFInvestMent === 0 || MyBalance === 0) {
-    // Data is still loading, return a loading state if needed
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "3em",
-        }}
-      >
-        <Loader />
-        <small style={{ color: "#2759e5" }}>
-          Note : Details will take some time to load please wait for few seconds
-        </small>
-      </div>
-    );
-  }
+  // if (MyinvestMent === 0 || MFInvestMent === 0 || MyBalance === 0) {
+  //   // Data is still loading, return a loading state if needed
+  //   return (
+  //     <div
+  //       style={{
+  //         display: "flex",
+  //         flexDirection: "column",
+  //         alignItems: "center",
+  //         gap: "3em",
+  //       }}
+  //     >
+  //       <Loader />
+  //       <small style={{ color: "#2759e5" }}>
+  //         Note : Details will take some time to load please wait for few seconds
+  //       </small>
+  //     </div>
+  //   );
+  // }
 
   return (
     <Container>
