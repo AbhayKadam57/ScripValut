@@ -237,7 +237,7 @@ export const SearchStock = async (req, res) => {
       .aggregate([
         {
           $search: {
-            index: "default1",
+            index: "default",
             text: {
               query: `${searchTerm}`,
               path: {
