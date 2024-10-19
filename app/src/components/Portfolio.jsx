@@ -1,19 +1,10 @@
-import React, { Children, useEffect, useLayoutEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useSelector } from "react-redux";
 import styled from "styled-components";
-import { useGetIndices } from "../customhooks/useGetIndices";
-import { useLocation } from "react-router-dom";
-import {
-  GetIndicesFailed,
-  GetIndicesStart,
-  GetIndicesSuccess,
-} from "../redux/StockDetailsSlice";
-import { publicRequest, userRequest } from "../apiRequest";
+import axios from "axios";
+import { Link, useLocation } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import axios from "axios";
-import { Link } from "react-router-dom";
-import { mobile } from "../responsive";
 
 const Container = styled.div`
   min-width: 100%;
@@ -47,7 +38,6 @@ const ColumnHeader = styled.div`
   min-width: 11.66%;
   display: flex;
   align-items: center;
-
   font-weight: 500;
 `;
 const Column = styled.div`
@@ -65,6 +55,7 @@ const RowDescription = styled(Link)`
   text-decoration: none;
   color: #000;
 `;
+
 const Description = styled.div`
   min-width: 30%;
   display: flex;
@@ -72,47 +63,70 @@ const Description = styled.div`
   font-weight: 500;
 `;
 
-const IndexImage = styled.img`
-  width: 2em;
-  height: 2em;
-  border-radius: 50%;
-`;
-
 const Portfolio = () => {
-  const [portfolioList, setPortFolioList] = useState([]);
+  const [portfolioList, setPortfolioList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const { userid } = useSelector((state) => state.users);
 
-  const { pathname } = useLocation();
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/stocks/getAllstocks/${userid}`,
+        {
+          userid: userid,
+        }
+      );
+      setPortfolioList(res.data);
+      setLoading(false);
+    } catch (e) {
+      console.error("Error fetching portfolio:", e);
+    }
+  }, [userid]);
 
   useEffect(() => {
-    const getData = async () => {
-      try {
-        const res = await axios.post(
-          `${import.meta.env.VITE_BASE_URL}/stocks/getAllstocks/${userid}`,
-          {
-            userid: userid,
-          }
-        );
-
-        setPortFolioList(res.data);
-      } catch (e) {
-        console.log(e);
-      }
-    };
-
     if (portfolioList.length === 0) {
-      getData();
+      fetchData();
     }
 
-    let intervalId = setInterval(getData, 60000);
+    const intervalId = setInterval(fetchData, 60000); // Fetch data every 60 seconds
+    return () => clearInterval(intervalId); // Clean up interval on component unmount
+  }, [fetchData, portfolioList.length]);
 
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [pathname]);
-
-  console.log(portfolioList);
+  const renderRows = useMemo(() => {
+    return portfolioList.map((stock, id) => (
+      <TableRow key={id}>
+        <RowDescription to={`/stock/${stock.stockname.replace(/[-()]/g, "")}`}>
+          {stock.stockname}
+        </RowDescription>
+        <Column>{stock.totalQuantity}</Column>
+        <Column>{stock.marketPrice.toFixed(3)}</Column>
+        <Column>{stock.averagePrice.toFixed(2)}</Column>
+        <Column>{(stock.averagePrice * stock.totalQuantity).toFixed(2)}</Column>
+        <Column>{(stock.marketPrice * stock.totalQuantity).toFixed(3)}</Column>
+        <Column
+          style={{
+            color:
+              stock.marketPrice * stock.totalQuantity -
+                stock.averagePrice * stock.totalQuantity >=
+              0
+                ? "green"
+                : "red",
+          }}
+        >
+          {(
+            ((
+              stock.marketPrice * stock.totalQuantity -
+              stock.averagePrice * stock.totalQuantity
+            ).toFixed(2) /
+              (stock.averagePrice * stock.totalQuantity)) *
+            100
+          ).toFixed(2)}{" "}
+          %
+        </Column>
+      </TableRow>
+    ));
+  }, [portfolioList]);
 
   return (
     <Container>
@@ -125,47 +139,9 @@ const Portfolio = () => {
         <ColumnHeader>Current Value</ColumnHeader>
         <ColumnHeader>Gain/Loss</ColumnHeader>
       </TableHeader>
-
-      {portfolioList?.map((stock, id) => (
-        <TableRow key={id}>
-          <RowDescription
-            to={`/stock/${stock.stockname.replace(/[-()]/g, "")}`}
-          >
-            {stock.stockname}
-          </RowDescription>
-          <Column>{stock.totalQuantity}</Column>
-          <Column>{stock.marketPrice.toFixed(3)}</Column>
-          <Column>{stock.averagePrice.toFixed(2)}</Column>
-          <Column>
-            {(stock.averagePrice * stock.totalQuantity).toFixed(2)}
-          </Column>
-          <Column>
-            {(stock.marketPrice * stock.totalQuantity).toFixed(3)}
-          </Column>
-          <Column
-            style={{
-              color:
-                stock.marketPrice * stock.totalQuantity -
-                  stock.averagePrice * stock.totalQuantity >=
-                0
-                  ? "green"
-                  : "red",
-            }}
-          >
-            {(
-              ((
-                stock.marketPrice * stock.totalQuantity -
-                stock.averagePrice * stock.totalQuantity
-              ).toFixed(2) /
-                (stock.averagePrice * stock.totalQuantity)) *
-              100
-            ).toFixed(2)}{" "}
-            %
-          </Column>
-        </TableRow>
-      ))}
+      {loading ? <Skeleton count={5} height={40} /> : renderRows}
     </Container>
   );
 };
 
-export default Portfolio;
+export default React.memo(Portfolio);
